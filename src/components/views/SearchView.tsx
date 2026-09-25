@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Search, Play, Pause, Heart, Radio, Loader2, Sparkles, Music2 } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Search, Play, Pause, Heart, Youtube, Loader2, Plus, ExternalLink } from 'lucide-react';
 import { useMusic } from '../../context/MusicContext';
 import { Track } from '../../types/music';
 
@@ -21,23 +21,28 @@ export const SearchView: React.FC = () => {
     isLoadingLive,
     liveSearchResults,
     liveArtistResults,
-    isAudiusConnected
+    isYouTubeConnected,
+    addCustomYouTubeTrack
   } = useMusic();
+
+  const [directInput, setDirectInput] = useState('');
+  const [isResolvingDirect, setIsResolvingDirect] = useState(false);
+  const [directError, setDirectError] = useState('');
 
   const query = searchQuery.trim().toLowerCase();
 
   const quickSearchTags = [
-    { label: '🇮🇳 Bollywood & Hindi', query: 'Hindi' },
-    { label: '🚩 Marathi Maati', query: 'Marathi' },
-    { label: '🥁 Zingaat & Dhol Tasha', query: 'Zingaat' },
-    { label: '🙏 Mauli Mauli & Abhang', query: 'Mauli' },
-    { label: '☕ Hindi Lo-Fi & Chai', query: 'Hindi Lo-Fi' },
-    { label: '💃 Marathi Lavani', query: 'Lavani' },
-    { label: '❤️ Kesariya & Sufi', query: 'Kesariya' },
-    { label: '⚡ Synthwave', query: 'Synthwave' }
+    { label: '🇮🇳 Bollywood & Hindi', query: 'Hindi Hit Songs' },
+    { label: '🚩 Marathi Maati', query: 'Marathi Songs' },
+    { label: '🥁 Zingaat & Dhol Tasha', query: 'Zingaat Sairat' },
+    { label: '🙏 Mauli Mauli & Abhang', query: 'Mauli Mauli' },
+    { label: '☕ Hindi Lo-Fi & Chill', query: 'Hindi Lo-Fi Songs' },
+    { label: '🎤 Arijit Singh', query: 'Arijit Singh' },
+    { label: '💃 Apsara Aali Lavani', query: 'Apsara Aali' },
+    { label: '🌟 The Weeknd', query: 'The Weeknd' }
   ];
 
-  // Merge live Audius results with cached tracks (deduping by ID or title)
+  // Merge live YouTube results with catalog tracks
   const combinedTracks = useMemo(() => {
     if (!query) return [];
     const localMatches = tracks.filter(t =>
@@ -48,12 +53,12 @@ export const SearchView: React.FC = () => {
     );
 
     const merged = [...liveSearchResults];
-    const seenTitles = new Set(liveSearchResults.map(t => t.title.toLowerCase()));
+    const seenIds = new Set(liveSearchResults.map(t => t.youtubeId || t.id));
 
     for (const t of localMatches) {
-      if (!seenTitles.has(t.title.toLowerCase())) {
+      if (!seenIds.has(t.youtubeId || t.id)) {
         merged.push(t);
-        seenTitles.add(t.title.toLowerCase());
+        seenIds.add(t.youtubeId || t.id);
       }
     }
     return merged;
@@ -80,8 +85,61 @@ export const SearchView: React.FC = () => {
 
   const topResult = combinedTracks[0] || null;
 
+  const handleDirectSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!directInput.trim()) return;
+
+    setIsResolvingDirect(true);
+    setDirectError('');
+
+    try {
+      const track = await addCustomYouTubeTrack(directInput.trim());
+      if (track) {
+        setDirectInput('');
+      } else {
+        setDirectError('Could not find YouTube track. Please check the link or video ID.');
+      }
+    } catch {
+      setDirectError('Network error connecting to YouTube.');
+    } finally {
+      setIsResolvingDirect(false);
+    }
+  };
+
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-6 pb-12">
+      {/* YouTube Direct Link/ID Fast Loader */}
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-red-950/40 via-[#151c2e] to-[#151c2e] border border-red-500/30 shadow-lg">
+        <form onSubmit={handleDirectSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          <div className="flex items-center gap-2 text-xs font-bold text-red-400 shrink-0">
+            <Youtube className="w-4 h-4 fill-current text-red-500" />
+            <span>Play any YouTube Song:</span>
+          </div>
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={directInput}
+              onChange={(e) => setDirectInput(e.target.value)}
+              placeholder="Paste any YouTube URL (e.g. https://youtu.be/... or video ID)"
+              className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-red-500 transition"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isResolvingDirect}
+            className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-slate-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer active:scale-95"
+          >
+            {isResolvingDirect ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Plus className="w-3.5 h-3.5" />
+            )}
+            <span>Stream Song</span>
+          </button>
+        </form>
+        {directError && <p className="text-[11px] text-red-400 mt-1.5">{directError}</p>}
+      </div>
+
       {/* Quick Search Suggestions */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         <span className="text-xs text-slate-500 font-semibold shrink-0 mr-1">Trending:</span>
@@ -103,100 +161,84 @@ export const SearchView: React.FC = () => {
       {/* If No Query: Show Spotify-style "Browse All" Genres Grid */}
       {!query ? (
         <section>
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
               Browse all
             </h2>
-            {isAudiusConnected && (
-              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-950/60 border border-purple-500/40 text-xs font-semibold text-purple-300">
-                <Radio className="w-3.5 h-3.5 text-purple-400" />
-                Audius API Connected
+            {isYouTubeConnected && (
+              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-950/60 border border-red-500/40 text-xs font-semibold text-red-300">
+                <Youtube className="w-3.5 h-3.5 text-red-500 fill-current" />
+                YouTube Library Connected
               </span>
             )}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
             {categories.map((cat) => (
               <div
                 key={cat.id}
                 onClick={() => setSearchQuery(cat.name)}
-                className={`relative h-44 rounded-xl overflow-hidden p-4 cursor-pointer transition-all duration-300 hover:scale-[1.02] shadow-lg ${cat.color}`}
+                className={`group relative overflow-hidden rounded-xl p-4 h-36 ${cat.color} cursor-pointer transition hover:scale-[1.02] shadow-lg`}
               >
-                <h3 className="font-extrabold text-lg md:text-xl text-white tracking-tight leading-tight">
+                <h3 className="font-extrabold text-lg text-white tracking-tight max-w-[120px] leading-tight">
                   {cat.name}
                 </h3>
-
-                {/* Angled Cover Art Image */}
                 <img
                   src={cat.image}
                   alt={cat.name}
-                  className="absolute -bottom-2 -right-4 w-28 h-28 object-cover rounded-lg rotate-[22deg] shadow-2xl brightness-90"
+                  className="absolute -bottom-2 -right-3 w-20 h-20 rotate-[25deg] rounded-md shadow-2xl object-cover transition-transform group-hover:scale-110 group-hover:rotate-[20deg]"
                 />
               </div>
             ))}
           </div>
         </section>
       ) : (
-        /* If Search Query is Entered: Show Search Results */
+        /* If Has Query: Show YouTube Live Results */
         <div className="space-y-8">
-          {/* Search Header Status */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-slate-300">
-              <span>Results for "<strong className="text-white">{searchQuery}</strong>"</span>
-              {isLoadingLive && (
-                <span className="flex items-center gap-1.5 text-xs text-cyan-400 animate-pulse font-medium">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Searching Audius Network...
-                </span>
-              )}
+          {isLoadingLive && (
+            <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400 animate-pulse py-1">
+              <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+              <span>Searching all songs on YouTube...</span>
             </div>
-            <span className="text-xs text-slate-500 font-mono">
-              {combinedTracks.length} tracks found
-            </span>
-          </div>
+          )}
 
-          {/* Top Result + Songs Grid */}
+          {/* Top Result + Songs List Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Top Result Card */}
             {topResult && (
-              <div className="lg:col-span-5">
+              <div className="lg:col-span-5 flex flex-col">
                 <h3 className="text-lg font-bold text-white mb-3">Top result</h3>
                 <div
                   onClick={() => playTrack(topResult, combinedTracks)}
-                  className="group relative p-5 rounded-2xl bg-[#151d2e] hover:bg-[#1b263b] border border-slate-800 transition duration-300 cursor-pointer shadow-xl flex flex-col justify-between h-60"
+                  className="group relative flex-1 p-5 rounded-2xl bg-[#131b2c] hover:bg-[#1a253c] transition duration-300 cursor-pointer border border-red-500/30 hover:border-red-500/60 shadow-xl flex flex-col justify-between"
                 >
-                  <img
-                    src={topResult.albumArt}
-                    alt={topResult.title}
-                    className="w-20 h-20 rounded-xl object-cover shadow-lg"
-                  />
-
-                  <div className="mt-3">
-                    <h4 className="text-xl md:text-2xl font-extrabold text-white truncate group-hover:text-cyan-300 transition-colors">
-                      {topResult.title}
-                    </h4>
-                    <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5 font-medium">
-                      <span>{topResult.artist}</span>
-                      <span>•</span>
-                      <span className="px-2 py-0.5 rounded-full bg-cyan-950/80 text-[10px] font-bold text-cyan-300 border border-cyan-800/50">
-                        {topResult.genre || 'Song'}
+                  <div>
+                    <div className="relative w-28 h-28 rounded-xl overflow-hidden shadow-2xl mb-4">
+                      <img
+                        src={topResult.albumArt}
+                        alt={topResult.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/80 backdrop-blur-md text-red-400 border border-red-500/40 flex items-center gap-1 shadow">
+                        <Youtube className="w-2.5 h-2.5 fill-current text-red-500" />
+                        YouTube
                       </span>
-                      {topResult.language && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300">
-                          {topResult.language}
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      {topResult.source || 'Audius Music Network'}
+                    </div>
+
+                    <h2 className="text-xl md:text-2xl font-black text-white group-hover:text-cyan-300 transition-colors line-clamp-2">
+                      {topResult.title}
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-1 line-clamp-1 flex items-center gap-1.5">
+                      <span className="font-semibold text-slate-200">{topResult.artist}</span>
+                      <span>•</span>
+                      <span className="text-slate-400">{topResult.album}</span>
                     </p>
                   </div>
 
-                  {/* Play Button */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (currentTrack.id === topResult.id) togglePlayPause();
+                      if (isPlaying && currentTrack.id === topResult.id) togglePlayPause();
                       else playTrack(topResult, combinedTracks);
                     }}
                     className="absolute bottom-5 right-5 w-12 h-12 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-xl shadow-cyan-500/40 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition duration-200 hover:scale-105"
@@ -213,9 +255,14 @@ export const SearchView: React.FC = () => {
 
             {/* Songs List */}
             <div className={`${topResult ? 'lg:col-span-7' : 'lg:col-span-12'}`}>
-              <h3 className="text-lg font-bold text-white mb-3">Songs</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-bold text-white">Songs from YouTube</h3>
+                <span className="text-xs text-slate-400">
+                  {combinedTracks.length} tracks found
+                </span>
+              </div>
               <div className="space-y-1">
-                {combinedTracks.slice(0, 6).map((track) => {
+                {combinedTracks.slice(0, 10).map((track) => {
                   const isThisPlaying = isPlaying && currentTrack.id === track.id;
                   const liked = isLiked(track.id);
 
@@ -250,16 +297,10 @@ export const SearchView: React.FC = () => {
                           </p>
                           <p className="text-xs text-slate-400 truncate flex items-center gap-1.5">
                             <span>{track.artist}</span>
-                            {track.language && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                                {track.language}
-                              </span>
-                            )}
-                            {track.id.startsWith('audius-') && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                                Audius
-                              </span>
-                            )}
+                            <span className="text-[9px] px-1 py-0.2 rounded bg-red-600/80 text-white font-bold flex items-center gap-0.5">
+                              <Youtube className="w-2.5 h-2.5 fill-current" />
+                              YT
+                            </span>
                           </p>
                         </div>
                       </div>
@@ -288,7 +329,7 @@ export const SearchView: React.FC = () => {
           {/* Artists Matching Search */}
           {combinedArtists.length > 0 && (
             <section>
-              <h3 className="text-lg font-bold text-white mb-3">Artists</h3>
+              <h3 className="text-lg font-bold text-white mb-3">Artists on YouTube</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {combinedArtists.map((artist) => (
                   <div
@@ -306,7 +347,7 @@ export const SearchView: React.FC = () => {
                     <h4 className="font-bold text-sm text-white truncate w-full group-hover:text-cyan-300">
                       {artist.name}
                     </h4>
-                    <p className="text-xs text-slate-400 mt-1">Artist</p>
+                    <p className="text-xs text-slate-400 mt-1">YouTube Artist</p>
                   </div>
                 ))}
               </div>
@@ -342,7 +383,7 @@ export const SearchView: React.FC = () => {
               <Search className="w-12 h-12 text-slate-600 mx-auto mb-3" />
               <h3 className="text-lg font-bold text-white">No results found for "{searchQuery}"</h3>
               <p className="text-xs text-slate-400 mt-1">
-                Try searching for Bollywood, Hindi, Marathi, Zingaat, Arijit, or browse the categories above.
+                You can search any song on YouTube, or paste a YouTube video link directly above.
               </p>
             </div>
           )}

@@ -38,8 +38,8 @@ export const HomeView: React.FC = () => {
     return tracks.filter(t => t.language === 'Marathi');
   }, [tracks]);
 
-  const audiusTrendingTracks = useMemo(() => {
-    return tracks.filter(t => t.id.startsWith('audius-')).slice(0, 8);
+  const youtubeTrendingTracks = useMemo(() => {
+    return tracks.filter(t => t.id.startsWith('yt-') || Boolean(t.youtubeId)).slice(0, 10);
   }, [tracks]);
 
   const displayTracks = useMemo(() => {
@@ -108,12 +108,10 @@ export const HomeView: React.FC = () => {
             {greeting}
           </h1>
           <div className="flex items-center gap-2">
-            {isAudiusConnected && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-950/60 border border-purple-500/40 text-xs font-semibold text-purple-300">
-                <Radio className="w-3.5 h-3.5 text-purple-400" />
-                Audius API Live
-              </span>
-            )}
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-950/60 border border-red-500/40 text-xs font-semibold text-red-300">
+              <Youtube className="w-3.5 h-3.5 text-red-500 fill-current" />
+              YouTube Library Live
+            </span>
             <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-500/30 text-xs font-semibold text-cyan-300">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
               SoundWave Hi-Fi
@@ -382,20 +380,21 @@ export const HomeView: React.FC = () => {
         </section>
       )}
 
-      {/* Audius Live Trending Section */}
-      {selectedLanguageFilter === 'all' && audiusTrendingTracks.length > 0 && (
+      {/* YouTube Live Trending Section */}
+      {selectedLanguageFilter === 'all' && youtubeTrendingTracks.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
-                  Audius Live Trending
+                  YouTube Live Trending
                 </h2>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                  Live API
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 flex items-center gap-1">
+                  <Youtube className="w-2.5 h-2.5 fill-current text-red-500" />
+                  YouTube Library
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Stream top tracks directly from decentralized Audius creators</p>
+              <p className="text-xs text-slate-400">Stream top songs and official videos directly from the YouTube Library</p>
             </div>
             <button
               onClick={() => refreshAudiusTrending()}
@@ -407,15 +406,15 @@ export const HomeView: React.FC = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3.5">
-            {audiusTrendingTracks.map((track) => {
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5">
+            {youtubeTrendingTracks.map((track) => {
               const isThisPlaying = isPlaying && currentTrack.id === track.id;
 
               return (
                 <div
                   key={track.id}
-                  onClick={() => playTrack(track, audiusTrendingTracks)}
-                  className="group relative p-3 bg-[#121826] hover:bg-[#1a2236] rounded-xl transition duration-200 cursor-pointer border border-slate-800/60 shadow-lg flex flex-col"
+                  onClick={() => playTrack(track, youtubeTrendingTracks)}
+                  className="group relative p-3 bg-[#121826] hover:bg-[#1a2236] rounded-xl transition duration-200 cursor-pointer border border-red-900/30 hover:border-red-500/40 shadow-lg flex flex-col"
                 >
                   <div className="relative aspect-square w-full rounded-lg overflow-hidden mb-2.5 shadow-md">
                     <img
@@ -424,11 +423,16 @@ export const HomeView: React.FC = () => {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
 
+                    <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/75 backdrop-blur-md text-red-400 border border-red-500/40 flex items-center gap-1 shadow">
+                      <Youtube className="w-2.5 h-2.5 fill-current text-red-500" />
+                      HD
+                    </span>
+
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         if (isThisPlaying) togglePlayPause();
-                        else playTrack(track, audiusTrendingTracks);
+                        else playTrack(track, youtubeTrendingTracks);
                       }}
                       className={`absolute bottom-2 right-2 w-9 h-9 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-xl shadow-cyan-500/40 transition-all duration-200 ${
                         isThisPlaying

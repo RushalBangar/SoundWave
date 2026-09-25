@@ -2,7 +2,13 @@ import React, { createContext, useContext, useEffect, useRef, useState, useMemo 
 import { Track, Playlist, Artist, Category, ViewType } from '../types/music';
 import { TRACKS, ARTISTS, PLAYLISTS, CATEGORIES } from '../data/mockMusic';
 import { SoundWaveAudioEngine } from '../audio/AudioEngine';
-import { fetchTrendingTracks, fetchIndianRegionalTracks, searchAudiusTracks, searchAudiusArtists } from '../services/audiusApi';
+import { 
+  searchYouTubeTracks, 
+  getYouTubeTrackFromIdOrUrl, 
+  fetchTrendingYouTubeTracks, 
+  fetchBollywoodYouTubeTracks, 
+  fetchMarathiYouTubeTracks 
+} from '../services/youtubeApi';
 
 export type LanguageFilter = 'all' | 'Hindi' | 'Marathi' | 'English';
 
@@ -40,7 +46,8 @@ interface MusicContextType {
   isLoadingLive: boolean;
   liveSearchResults: Track[];
   liveArtistResults: Artist[];
-  isAudiusConnected: boolean;
+  isAudiusConnected: boolean; // Retained for backwards compatibility
+  isYouTubeConnected: boolean;
 
   // Actions
   playTrack: (track: Track, newQueue?: Track[]) => void;
@@ -65,7 +72,9 @@ interface MusicContextType {
   createPlaylist: (title: string, description: string) => Playlist;
   addTrackToPlaylist: (playlistId: string, trackId: string) => void;
   removeTrackFromPlaylist: (playlistId: string, trackId: string) => void;
-  refreshAudiusTrending: () => Promise<void>;
+  refreshAudiusTrending: () => Promise<void>; // Alias for YouTube refresh
+  refreshYouTubeTrending: () => Promise<void>;
+  addCustomYouTubeTrack: (urlOrId: string) => Promise<Track | null>;
   audioEngine: SoundWaveAudioEngine;
 }
 
@@ -76,23 +85,41 @@ const STORAGE_CUSTOM_PLAYLISTS = 'soundwave_custom_playlists';
 
 export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [baseTracks, setBaseTracks] = useState<Track[]>(TRACKS);
-  const [audiusTracks, setAudiusTracks] = useState<Track[]>([]);
+  const [youtubeLiveTracks, setYoutubeLiveTracks] = useState<Track[]>([]);
   const [baseArtists, setBaseArtists] = useState<Artist[]>(ARTISTS);
-  const [audiusArtists, setAudiusArtists] = useState<Artist[]>([]);
+  const [youtubeArtists, setYoutubeArtists] = useState<Artist[]>([]);
 
   const [isLoadingLive, setIsLoadingLive] = useState(false);
-  const [isAudiusConnected, setIsAudiusConnected] = useState(false);
+  const [isYouTubeConnected, setIsYouTubeConnected] = useState(true);
   const [liveSearchResults, setLiveSearchResults] = useState<Track[]>([]);
   const [liveArtistResults, setLiveArtistResults] = useState<Artist[]>([]);
 
-  // Combined tracks: Audius trending first, then base tracks
+  // Combined YouTube Catalog: Live trending tracks first, then predefined tracks
   const tracks = useMemo(() => {
-    return audiusTracks.length > 0 ? [...audiusTracks, ...baseTracks] : baseTracks;
-  }, [audiusTracks, baseTracks]);
+    if (youtubeLiveTracks.length === 0) return baseTracks;
+    const seen = new Set<string>();
+    const merged: Track[] = [];
+
+    for (const t of youtubeLiveTracks) {
+      if (!seen.has(t.youtubeId || t.id)) {
+        seen.add(t.youtubeId || t.id);
+        merged.push(t);
+      }
+    }
+
+    for (const t of baseTracks) {
+      if (!seen.has(t.youtubeId || t.id)) {
+        seen.add(t.youtubeId || t.id);
+        merged.push(t);
+      }
+    }
+
+    return merged;
+  }, [youtubeLiveTracks, baseTracks]);
 
   const artists = useMemo(() => {
-    return audiusArtists.length > 0 ? [...audiusArtists, ...baseArtists] : baseArtists;
-  }, [audiusArtists, baseArtists]);
+    return youtubeArtists.length > 0 ? [...youtubeArtists, ...baseArtists] : baseArtists;
+  }, [youtubeArtists, baseArtists]);
 
   const [customPlaylists, setCustomPlaylists] = useState<Playlist[]>(() => {
     try {
@@ -105,26 +132,26 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const playlists = useMemo(() => {
     const list = [...PLAYLISTS];
-    if (audiusTracks.length > 0) {
+    if (youtubeLiveTracks.length > 0) {
       list.unshift({
-        id: 'pl-audius-trending',
-        title: 'Audius Global Trending',
-        description: 'Live top streaming tracks powered by the decentralized Audius Music Network.',
-        coverArt: audiusTracks[0]?.albumArt || 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=600&auto=format&fit=crop&q=80',
-        owner: 'Audius Official',
-        gradientColor: 'from-[#a855f7]/40 to-[#090d16]',
-        trackIds: audiusTracks.slice(0, 15).map(t => t.id)
+        id: 'pl-yt-trending',
+        title: 'YouTube Music Live Trending',
+        description: 'Real-time top streaming songs and official music videos from the YouTube Library.',
+        coverArt: youtubeLiveTracks[0]?.albumArt || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80',
+        owner: 'YouTube Music Official',
+        gradientColor: 'from-[#ef4444]/40 to-[#090d16]',
+        trackIds: youtubeLiveTracks.slice(0, 15).map(t => t.id)
       });
     }
     return [...list, ...customPlaylists];
-  }, [audiusTracks, customPlaylists]);
+  }, [youtubeLiveTracks, customPlaylists]);
 
   const categories = useMemo(() => CATEGORIES, []);
 
   const [currentTrack, setCurrentTrack] = useState<Track>(TRACKS[0]);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const [duration, setDuration] = useState<number>(TRACKS[0].duration || 180);
+  const [duration, setDuration] = useState<number>(TRACKS[0].duration || 268);
   const [volume, setVolume] = useState<number>(0.8);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [isShuffle, setIsShuffle] = useState<boolean>(false);
@@ -134,9 +161,9 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [likedTrackIds, setLikedTrackIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_LIKED);
-      return saved ? JSON.parse(saved) : ['track-1', 'track-2', 'track-7'];
+      return saved ? JSON.parse(saved) : ['track-hindi-1', 'track-marathi-1', 'track-1'];
     } catch {
-      return ['track-1', 'track-2'];
+      return ['track-hindi-1', 'track-marathi-1'];
     }
   });
 
@@ -178,62 +205,61 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }
   const audioEngine = audioEngineRef.current;
 
-  // Fetch Audius trending & Indian regional tracks on initial launch
-  const loadAudiusMusic = async () => {
+  // Fetch YouTube trending on startup
+  const loadYouTubeMusic = async () => {
     setIsLoadingLive(true);
     try {
-      const [trending, indianTracks] = await Promise.all([
-        fetchTrendingTracks(undefined, 20),
-        fetchIndianRegionalTracks(15)
+      const [bollywood, marathi, trending] = await Promise.all([
+        fetchBollywoodYouTubeTracks(10),
+        fetchMarathiYouTubeTracks(10),
+        fetchTrendingYouTubeTracks('trending songs 2026', 10)
       ]);
 
-      const combinedLive = [...indianTracks, ...trending];
+      const merged = [...bollywood, ...marathi, ...trending];
       const seen = new Set<string>();
       const deduped: Track[] = [];
-      for (const t of combinedLive) {
-        if (!seen.has(t.id)) {
-          seen.add(t.id);
+
+      for (const t of merged) {
+        if (!seen.has(t.youtubeId || t.id)) {
+          seen.add(t.youtubeId || t.id);
           deduped.push(t);
         }
       }
 
       if (deduped.length > 0) {
-        setAudiusTracks(deduped);
-        setIsAudiusConnected(true);
-        setQueue(prev => [...deduped, ...prev]);
+        setYoutubeLiveTracks(deduped);
+        setIsYouTubeConnected(true);
 
-        // Extract unique artists
-        const uniqueArtists: Artist[] = [];
-        const artistSeen = new Set<string>();
+        // Derive artist profiles from YouTube channels
+        const artistMap = new Map<string, Artist>();
         for (const t of deduped) {
-          if (!artistSeen.has(t.artistId)) {
-            artistSeen.add(t.artistId);
-            uniqueArtists.push({
+          if (!artistMap.has(t.artist)) {
+            artistMap.set(t.artist, {
               id: t.artistId,
               name: t.artist,
               avatar: t.albumArt,
               coverImage: t.albumArt,
-              monthlyListeners: (t.plays || 5000) * 12,
+              monthlyListeners: (t.plays || 100000) * 8,
               verified: true,
-              bio: `Artist on the Audius network. Stream their tracks on SoundWave.`,
+              bio: `Official YouTube Music artist. Stream all their songs on SoundWave.`,
               popularTrackIds: [t.id]
             });
           }
         }
-        setAudiusArtists(uniqueArtists);
+        setYoutubeArtists(Array.from(artistMap.values()));
       }
     } catch (e) {
-      console.warn('Audius trending load failed, base tracks active:', e);
+      console.warn('YouTube live trending load failed, predefined catalog active:', e);
     } finally {
       setIsLoadingLive(false);
     }
   };
 
   useEffect(() => {
-    loadAudiusMusic();
+    loadYouTubeMusic();
   }, []);
 
-  // Live Audius Search with debounce
+  // Live YouTube Search with debounce
   useEffect(() => {
     if (!searchQuery.trim()) {
       setLiveSearchResults([]);
@@ -244,14 +270,28 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const timer = setTimeout(async () => {
       setIsLoadingLive(true);
       try {
-        const [trackRes, artistRes] = await Promise.all([
-          searchAudiusTracks(searchQuery, 15),
-          searchAudiusArtists(searchQuery, 6)
-        ]);
-        setLiveSearchResults(trackRes);
-        setLiveArtistResults(artistRes);
+        const results = await searchYouTubeTracks(searchQuery, 20);
+        setLiveSearchResults(results);
+
+        // Extract artists from search results
+        const artistMap = new Map<string, Artist>();
+        for (const t of results) {
+          if (!artistMap.has(t.artist)) {
+            artistMap.set(t.artist, {
+              id: t.artistId,
+              name: t.artist,
+              avatar: t.albumArt,
+              coverImage: t.albumArt,
+              monthlyListeners: (t.plays || 500000),
+              verified: true,
+              bio: `Official YouTube Artist • ${t.artist}`,
+              popularTrackIds: [t.id]
+            });
+          }
+        }
+        setLiveArtistResults(Array.from(artistMap.values()).slice(0, 6));
       } catch (err) {
-        console.warn('Live search error:', err);
+        console.warn('Live YouTube search error:', err);
       } finally {
         setIsLoadingLive(false);
       }
@@ -364,64 +404,65 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const playNext = () => {
     if (queue.length === 0) return;
     const currentIndex = queue.findIndex(t => t.id === currentTrack.id);
-    let nextIndex: number;
+    let nextIndex = 0;
 
     if (isShuffle) {
       nextIndex = Math.floor(Math.random() * queue.length);
-      if (nextIndex === currentIndex && queue.length > 1) {
-        nextIndex = (currentIndex + 1) % queue.length;
-      }
-    } else {
+    } else if (currentIndex < queue.length - 1) {
       nextIndex = currentIndex + 1;
-      if (nextIndex >= queue.length) {
-        if (repeatMode === 'all') {
-          nextIndex = 0;
-        } else {
-          audioEngine.pause();
-          setIsPlaying(false);
-          return;
-        }
-      }
+    } else if (repeatMode === 'all') {
+      nextIndex = 0;
+    } else {
+      return;
     }
 
-    const nextTrack = queue[nextIndex];
-    playTrack(nextTrack);
+    playTrack(queue[nextIndex]);
   };
 
   const playPrevious = () => {
     if (currentTime > 3) {
-      seekTo(0);
+      audioEngine.seek(0);
+      setCurrentTime(0);
       return;
     }
+
+    if (queue.length === 0) return;
     const currentIndex = queue.findIndex(t => t.id === currentTrack.id);
-    const prevIndex = (currentIndex - 1 + queue.length) % queue.length;
+    let prevIndex = queue.length - 1;
+
+    if (isShuffle) {
+      prevIndex = Math.floor(Math.random() * queue.length);
+    } else if (currentIndex > 0) {
+      prevIndex = currentIndex - 1;
+    }
+
     playTrack(queue[prevIndex]);
   };
 
   const seekTo = (seconds: number) => {
-    setCurrentTime(seconds);
     audioEngine.seek(seconds);
+    setCurrentTime(seconds);
   };
 
   const setPlayerVolume = (vol: number) => {
     setVolume(vol);
-    if (vol > 0 && isMuted) {
-      setIsMuted(false);
-    }
+    if (isMuted && vol > 0) setIsMuted(false);
   };
 
   const toggleMute = () => {
-    setIsMuted(!isMuted);
+    setIsMuted(prev => !prev);
   };
 
   const toggleShuffle = () => {
-    setIsShuffle(!isShuffle);
+    setIsShuffle(prev => !prev);
   };
 
   const toggleRepeat = () => {
-    if (repeatMode === 'off') setRepeatMode('all');
-    else if (repeatMode === 'all') setRepeatMode('one');
-    else setRepeatMode('off');
+    setRepeatMode(prev => {
+      if (prev === 'off') return 'all';
+      if (prev === 'all') return 'one';
+      return 'off';
+    });
   };
 
   const toggleLike = (trackId: string) => {
@@ -430,47 +471,53 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
   };
 
-  const isLiked = (trackId: string) => {
+  const isLiked = (trackId: string): boolean => {
     return likedTrackIds.includes(trackId);
   };
 
   const navigateTo = (view: ViewType, options?: { playlistId?: string; artistId?: string }) => {
-    const newState: NavState = {
+    const nextState: NavState = {
       view,
       playlistId: options?.playlistId,
       artistId: options?.artistId
     };
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(newState);
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
+
+    setHistory(prev => {
+      const trimmed = prev.slice(0, historyIndex + 1);
+      return [...trimmed, nextState];
+    });
+    setHistoryIndex(prev => prev + 1);
   };
 
+  const canGoBack = historyIndex > 0;
+  const canGoForward = historyIndex < history.length - 1;
+
   const goBack = () => {
-    if (historyIndex > 0) {
-      setHistoryIndex(historyIndex - 1);
+    if (canGoBack) {
+      setHistoryIndex(prev => prev - 1);
     }
   };
 
   const goForward = () => {
-    if (historyIndex < history.length - 1) {
-      setHistoryIndex(historyIndex + 1);
+    if (canGoForward) {
+      setHistoryIndex(prev => prev + 1);
     }
   };
 
   const createPlaylist = (title: string, description: string): Playlist => {
-    const newPl: Playlist = {
-      id: 'custom-' + Date.now(),
+    const newPlaylist: Playlist = {
+      id: `custom-pl-${Date.now()}`,
       title,
-      description: description || 'Created on SoundWave Web',
-      coverArt: 'https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=600&auto=format&fit=crop&q=80',
+      description,
+      coverArt: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
       owner: 'You',
+      gradientColor: 'from-[#00F0FF]/30 to-[#090d16]',
       isCustom: true,
-      trackIds: [],
-      gradientColor: 'from-[#00F0FF]/30 to-[#090d16]'
+      trackIds: []
     };
-    setCustomPlaylists(prev => [newPl, ...prev]);
-    return newPl;
+
+    setCustomPlaylists(prev => [newPlaylist, ...prev]);
+    return newPlaylist;
   };
 
   const addTrackToPlaylist = (playlistId: string, trackId: string) => {
@@ -493,6 +540,16 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return p;
       })
     );
+  };
+
+  const addCustomYouTubeTrack = async (urlOrId: string): Promise<Track | null> => {
+    const track = await getYouTubeTrackFromIdOrUrl(urlOrId);
+    if (track) {
+      setBaseTracks(prev => [track, ...prev]);
+      playTrack(track);
+      return track;
+    }
+    return null;
   };
 
   return (
@@ -526,12 +583,13 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isYouTubeVideoOpen,
         setIsYouTubeVideoOpen,
         syncTimeUpdate,
-        canGoBack: historyIndex > 0,
-        canGoForward: historyIndex < history.length - 1,
+        canGoBack,
+        canGoForward,
         isLoadingLive,
         liveSearchResults,
         liveArtistResults,
-        isAudiusConnected,
+        isAudiusConnected: isYouTubeConnected,
+        isYouTubeConnected,
 
         playTrack,
         togglePlayPause,
@@ -555,7 +613,9 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         createPlaylist,
         addTrackToPlaylist,
         removeTrackFromPlaylist,
-        refreshAudiusTrending: loadAudiusMusic,
+        refreshAudiusTrending: loadYouTubeMusic,
+        refreshYouTubeTrending: loadYouTubeMusic,
+        addCustomYouTubeTrack,
         audioEngine
       }}
     >
