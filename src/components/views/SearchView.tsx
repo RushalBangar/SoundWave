@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Play, Pause, Heart, Youtube, Loader2, Plus, ExternalLink } from 'lucide-react';
+import { Search, Play, Pause, Heart, Loader2, Plus, Sparkles, Music } from 'lucide-react';
 import { useMusic } from '../../context/MusicContext';
-import { Track } from '../../types/music';
 
 export const SearchView: React.FC = () => {
   const {
@@ -21,7 +20,6 @@ export const SearchView: React.FC = () => {
     isLoadingLive,
     liveSearchResults,
     liveArtistResults,
-    isYouTubeConnected,
     addCustomYouTubeTrack
   } = useMusic();
 
@@ -42,7 +40,7 @@ export const SearchView: React.FC = () => {
     { label: '🌟 The Weeknd', query: 'The Weeknd' }
   ];
 
-  // Merge live YouTube results with catalog tracks
+  // Merge live search results with catalog tracks
   const combinedTracks = useMemo(() => {
     if (!query) return [];
     const localMatches = tracks.filter(t =>
@@ -97,10 +95,10 @@ export const SearchView: React.FC = () => {
       if (track) {
         setDirectInput('');
       } else {
-        setDirectError('Could not find YouTube track. Please check the link or video ID.');
+        setDirectError('Could not find song. Please check the song link or ID.');
       }
     } catch {
-      setDirectError('Network error connecting to YouTube.');
+      setDirectError('Network error streaming track.');
     } finally {
       setIsResolvingDirect(false);
     }
@@ -108,26 +106,26 @@ export const SearchView: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* YouTube Direct Link/ID Fast Loader */}
-      <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-red-950/40 via-[#151c2e] to-[#151c2e] border border-red-500/30 shadow-lg">
+      {/* Direct Link or ID Fast Loader */}
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-[#151c2e] to-[#151c2e] border border-slate-700/60 shadow-lg">
         <form onSubmit={handleDirectSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-          <div className="flex items-center gap-2 text-xs font-bold text-red-400 shrink-0">
-            <Youtube className="w-4 h-4 fill-current text-red-500" />
-            <span>Play any YouTube Song:</span>
+          <div className="flex items-center gap-2 text-xs font-bold text-cyan-400 shrink-0">
+            <Sparkles className="w-4 h-4 text-cyan-400" />
+            <span>Play Any Song by Link:</span>
           </div>
           <div className="flex-1 relative">
             <input
               type="text"
               value={directInput}
               onChange={(e) => setDirectInput(e.target.value)}
-              placeholder="Paste any YouTube URL (e.g. https://youtu.be/... or video ID)"
-              className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-red-500 transition"
+              placeholder="Paste song link or share URL..."
+              className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 transition"
             />
           </div>
           <button
             type="submit"
             disabled={isResolvingDirect}
-            className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-slate-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer active:scale-95"
+            className="px-4 py-2 bg-cyan-400 hover:bg-cyan-300 disabled:bg-slate-700 text-black font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer active:scale-95"
           >
             {isResolvingDirect ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -165,12 +163,6 @@ export const SearchView: React.FC = () => {
             <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
               Browse all
             </h2>
-            {isYouTubeConnected && (
-              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-950/60 border border-red-500/40 text-xs font-semibold text-red-300">
-                <Youtube className="w-3.5 h-3.5 text-red-500 fill-current" />
-                YouTube Library Connected
-              </span>
-            )}
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
@@ -193,12 +185,12 @@ export const SearchView: React.FC = () => {
           </div>
         </section>
       ) : (
-        /* If Has Query: Show YouTube Live Results */
+        /* If Has Query: Show Live Results */
         <div className="space-y-8">
           {isLoadingLive && (
             <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400 animate-pulse py-1">
-              <Loader2 className="w-4 h-4 animate-spin text-red-500" />
-              <span>Searching all songs on YouTube...</span>
+              <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+              <span>Searching music library...</span>
             </div>
           )}
 
@@ -210,7 +202,7 @@ export const SearchView: React.FC = () => {
                 <h3 className="text-lg font-bold text-white mb-3">Top result</h3>
                 <div
                   onClick={() => playTrack(topResult, combinedTracks)}
-                  className="group relative flex-1 p-5 rounded-2xl bg-[#131b2c] hover:bg-[#1a253c] transition duration-300 cursor-pointer border border-red-500/30 hover:border-red-500/60 shadow-xl flex flex-col justify-between"
+                  className="group relative flex-1 p-5 rounded-2xl bg-[#131b2c] hover:bg-[#1a253c] transition duration-300 cursor-pointer border border-slate-800 hover:border-cyan-500/40 shadow-xl flex flex-col justify-between"
                 >
                   <div>
                     <div className="relative w-28 h-28 rounded-xl overflow-hidden shadow-2xl mb-4">
@@ -219,10 +211,6 @@ export const SearchView: React.FC = () => {
                         alt={topResult.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                      <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/80 backdrop-blur-md text-red-400 border border-red-500/40 flex items-center gap-1 shadow">
-                        <Youtube className="w-2.5 h-2.5 fill-current text-red-500" />
-                        YouTube
-                      </span>
                     </div>
 
                     <h2 className="text-xl md:text-2xl font-black text-white group-hover:text-cyan-300 transition-colors line-clamp-2">
@@ -256,7 +244,7 @@ export const SearchView: React.FC = () => {
             {/* Songs List */}
             <div className={`${topResult ? 'lg:col-span-7' : 'lg:col-span-12'}`}>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-bold text-white">Songs from YouTube</h3>
+                <h3 className="text-lg font-bold text-white">Songs</h3>
                 <span className="text-xs text-slate-400">
                   {combinedTracks.length} tracks found
                 </span>
@@ -295,12 +283,8 @@ export const SearchView: React.FC = () => {
                           <p className={`text-sm font-semibold truncate ${currentTrack.id === track.id ? 'text-cyan-400' : 'text-white'}`}>
                             {track.title}
                           </p>
-                          <p className="text-xs text-slate-400 truncate flex items-center gap-1.5">
-                            <span>{track.artist}</span>
-                            <span className="text-[9px] px-1 py-0.2 rounded bg-red-600/80 text-white font-bold flex items-center gap-0.5">
-                              <Youtube className="w-2.5 h-2.5 fill-current" />
-                              YT
-                            </span>
+                          <p className="text-xs text-slate-400 truncate">
+                            {track.artist}
                           </p>
                         </div>
                       </div>
@@ -329,7 +313,7 @@ export const SearchView: React.FC = () => {
           {/* Artists Matching Search */}
           {combinedArtists.length > 0 && (
             <section>
-              <h3 className="text-lg font-bold text-white mb-3">Artists on YouTube</h3>
+              <h3 className="text-lg font-bold text-white mb-3">Artists</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {combinedArtists.map((artist) => (
                   <div
@@ -347,7 +331,7 @@ export const SearchView: React.FC = () => {
                     <h4 className="font-bold text-sm text-white truncate w-full group-hover:text-cyan-300">
                       {artist.name}
                     </h4>
-                    <p className="text-xs text-slate-400 mt-1">YouTube Artist</p>
+                    <p className="text-xs text-slate-400 mt-1">Artist</p>
                   </div>
                 ))}
               </div>
@@ -383,7 +367,7 @@ export const SearchView: React.FC = () => {
               <Search className="w-12 h-12 text-slate-600 mx-auto mb-3" />
               <h3 className="text-lg font-bold text-white">No results found for "{searchQuery}"</h3>
               <p className="text-xs text-slate-400 mt-1">
-                You can search any song on YouTube, or paste a YouTube video link directly above.
+                Try searching for another song, artist, or paste a link above.
               </p>
             </div>
           )}

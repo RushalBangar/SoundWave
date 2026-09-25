@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Play, Pause, Heart, Sparkles, ChevronRight, Radio, RefreshCw, Flame, Youtube } from 'lucide-react';
+import { Play, Pause, Heart, Sparkles, ChevronRight, Radio, RefreshCw, Flame } from 'lucide-react';
 import { useMusic } from '../../context/MusicContext';
 import { Track, Playlist } from '../../types/music';
 
@@ -108,11 +108,7 @@ export const HomeView: React.FC = () => {
             {greeting}
           </h1>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-950/60 border border-red-500/40 text-xs font-semibold text-red-300">
-              <Youtube className="w-3.5 h-3.5 text-red-500 fill-current" />
-              YouTube Library Live
-            </span>
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-500/30 text-xs font-semibold text-cyan-300">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-500/30 text-xs font-semibold text-cyan-300">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
               SoundWave Hi-Fi
             </span>
@@ -262,12 +258,6 @@ export const HomeView: React.FC = () => {
                       alt={track.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    {track.youtubeId && (
-                      <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/70 backdrop-blur-md text-orange-400 border border-orange-500/40 flex items-center gap-1 shadow">
-                        <Youtube className="w-2.5 h-2.5 fill-current text-red-500" />
-                        HD
-                      </span>
-                    )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -341,12 +331,6 @@ export const HomeView: React.FC = () => {
                       alt={track.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    {track.youtubeId && (
-                      <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/70 backdrop-blur-md text-rose-400 border border-rose-500/40 flex items-center gap-1 shadow">
-                        <Youtube className="w-2.5 h-2.5 fill-current text-red-500" />
-                        HD
-                      </span>
-                    )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -380,21 +364,21 @@ export const HomeView: React.FC = () => {
         </section>
       )}
 
-      {/* YouTube Live Trending Section */}
+      {/* Live Trending Section */}
       {selectedLanguageFilter === 'all' && youtubeTrendingTracks.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
-                  YouTube Live Trending
+                  Trending Now
                 </h2>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 flex items-center gap-1">
-                  <Youtube className="w-2.5 h-2.5 fill-current text-red-500" />
-                  YouTube Library
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
+                  <Flame className="w-2.5 h-2.5 text-cyan-400" />
+                  Top Hits
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Stream top songs and official videos directly from the YouTube Library</p>
+              <p className="text-xs text-slate-400">Stream top trending releases and chart-toppers</p>
             </div>
             <button
               onClick={() => refreshAudiusTrending()}
@@ -414,7 +398,7 @@ export const HomeView: React.FC = () => {
                 <div
                   key={track.id}
                   onClick={() => playTrack(track, youtubeTrendingTracks)}
-                  className="group relative p-3 bg-[#121826] hover:bg-[#1a2236] rounded-xl transition duration-200 cursor-pointer border border-red-900/30 hover:border-red-500/40 shadow-lg flex flex-col"
+                  className="group relative p-3 bg-[#121826] hover:bg-[#1a2236] rounded-xl transition duration-200 cursor-pointer border border-slate-800/60 hover:border-cyan-500/40 shadow-lg flex flex-col"
                 >
                   <div className="relative aspect-square w-full rounded-lg overflow-hidden mb-2.5 shadow-md">
                     <img
@@ -422,11 +406,6 @@ export const HomeView: React.FC = () => {
                       alt={track.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-
-                    <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/75 backdrop-blur-md text-red-400 border border-red-500/40 flex items-center gap-1 shadow">
-                      <Youtube className="w-2.5 h-2.5 fill-current text-red-500" />
-                      HD
-                    </span>
 
                     <button
                       onClick={(e) => {

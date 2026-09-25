@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Play, Pause, Heart, Share2, Copy, Check, ExternalLink, Sliders, Music, Sparkles, Youtube, Flame } from 'lucide-react';
+import { X, Play, Pause, Heart, Share2, Copy, Check, ExternalLink, Sliders, Music, Sparkles, Flame } from 'lucide-react';
 import { useMusic } from '../../context/MusicContext';
 import { Track } from '../../types/music';
 
@@ -15,8 +15,7 @@ export const InstagramTemplateModal: React.FC<InstagramTemplateModalProps> = ({
   isOpen,
   onClose,
   track,
-  onOpenEqualizer,
-  onOpenYouTubeVideo
+  onOpenEqualizer
 }) => {
   const { isPlaying, currentTrack, togglePlayPause, playTrack, isLiked, toggleLike, frequencyData } = useMusic();
   const [copied, setCopied] = useState(false);
@@ -28,7 +27,7 @@ export const InstagramTemplateModal: React.FC<InstagramTemplateModalProps> = ({
   const liked = isLiked(track.id);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(`♫ ${track.title} by ${track.artist} - Stream on SoundWave (Official YouTube Music)`);
+    navigator.clipboard.writeText(`♫ ${track.title} by ${track.artist} - Stream on SoundWave Hi-Fi`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -155,9 +154,9 @@ export const InstagramTemplateModal: React.FC<InstagramTemplateModalProps> = ({
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                <span className="text-slate-400 text-[10px] block">Official Audio Source</span>
+                <span className="text-slate-400 text-[10px] block">Audio Format</span>
                 <span className="font-bold text-cyan-400 truncate block">
-                  {track.youtubeId ? 'YouTube Music Official' : 'High-Fi Master'}
+                  Lossless Master Hi-Fi
                 </span>
               </div>
             </div>
@@ -184,19 +183,6 @@ export const InstagramTemplateModal: React.FC<InstagramTemplateModalProps> = ({
               <span>Instagram EQ</span>
             </button>
           </div>
-
-          {track.youtubeId && (
-            <a
-              href={track.youtubeUrl || `https://www.youtube.com/watch?v=${track.youtubeId}`}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full py-2.5 px-3 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 text-xs font-bold transition flex items-center justify-center gap-2"
-            >
-              <Youtube className="w-4 h-4 text-red-500 fill-current" />
-              <span>Watch Official Music Video on YouTube</span>
-              <ExternalLink className="w-3.5 h-3.5 ml-1" />
-            </a>
-          )}
         </div>
       </div>
     </div>

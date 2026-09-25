@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Play, Heart, Plus, Check, Radio, UserPlus, Sliders, Sparkles, Youtube, ExternalLink } from 'lucide-react';
+import { X, Play, Heart, Plus, Check, Radio, UserPlus, Sliders, Sparkles, ExternalLink } from 'lucide-react';
 import { useMusic } from '../../context/MusicContext';
 
 interface RightSidebarProps {
@@ -10,8 +10,7 @@ interface RightSidebarProps {
 
 export const RightSidebar: React.FC<RightSidebarProps> = ({
   onOpenEqualizer,
-  onOpenInstagramTemplate,
-  onToggleYouTubeVideo
+  onOpenInstagramTemplate
 }) => {
   const {
     currentTrack,
@@ -143,7 +142,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
             </button>
           </div>
 
-          {/* Special Actions: Instagram EQ, Reels Template, YouTube Video */}
+          {/* Special Actions: Instagram EQ, Reels Template */}
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               {onOpenEqualizer && (
@@ -172,21 +171,6 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                 </button>
               )}
             </div>
-
-            {onToggleYouTubeVideo && currentTrack.youtubeId && (
-              <button
-                onClick={onToggleYouTubeVideo}
-                className="w-full p-2.5 rounded-xl bg-red-950/40 hover:bg-red-950/60 border border-red-500/40 text-red-300 font-bold text-xs flex items-center justify-between transition"
-              >
-                <div className="flex items-center gap-2">
-                  <Youtube className="w-4 h-4 text-red-500 fill-current" />
-                  <span>Watch on YouTube</span>
-                </div>
-                <span className="text-[10px] bg-red-500/20 px-2 py-0.5 rounded text-red-300">
-                  Official Video
-                </span>
-              </button>
-            )}
           </div>
 
           {/* About The Artist Card */}

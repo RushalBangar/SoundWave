@@ -135,11 +135,11 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (youtubeLiveTracks.length > 0) {
       list.unshift({
         id: 'pl-yt-trending',
-        title: 'YouTube Music Live Trending',
-        description: 'Real-time top streaming songs and official music videos from the YouTube Library.',
+        title: 'Global Trending Hits',
+        description: 'Real-time top streaming songs and chart-topping releases in lossless fidelity.',
         coverArt: youtubeLiveTracks[0]?.albumArt || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80',
-        owner: 'YouTube Music Official',
-        gradientColor: 'from-[#ef4444]/40 to-[#090d16]',
+        owner: 'SoundWave Editorial',
+        gradientColor: 'from-[#00F0FF]/40 to-[#090d16]',
         trackIds: youtubeLiveTracks.slice(0, 15).map(t => t.id)
       });
     }
@@ -241,7 +241,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               coverImage: t.albumArt,
               monthlyListeners: (t.plays || 100000) * 8,
               verified: true,
-              bio: `Official YouTube Music artist. Stream all their songs on SoundWave.`,
+              bio: `Featured artist • Stream all their tracks on SoundWave.`,
               popularTrackIds: [t.id]
             });
           }
@@ -284,7 +284,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               coverImage: t.albumArt,
               monthlyListeners: (t.plays || 500000),
               verified: true,
-              bio: `Official YouTube Artist • ${t.artist}`,
+              bio: `Featured Artist • ${t.artist}`,
               popularTrackIds: [t.id]
             });
           }

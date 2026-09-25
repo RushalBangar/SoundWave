@@ -62,7 +62,7 @@ export function detectGenre(title: string, artist: string): string {
   if (combined.includes('dance') || combined.includes('party') || combined.includes('club')) return 'Club Dance';
   if (combined.includes('pop')) return 'Pop';
   if (combined.includes('rock')) return 'Rock';
-  return 'YouTube Hit';
+  return 'SoundWave Hit';
 }
 
 // Transform YouTube API video item to SoundWave Track
@@ -73,12 +73,12 @@ export function transformYouTubeVideo(item: any): Track {
   return {
     id: `yt-${item.id}`,
     title: item.title,
-    artist: item.artist || item.channelName || 'YouTube Artist',
-    artistId: `artist-yt-${encodeURIComponent(item.artist || 'youtube')}`,
-    album: item.channelName ? `${item.channelName} • YouTube` : 'YouTube Music',
+    artist: item.artist || item.channelName || 'Artist',
+    artistId: `artist-yt-${encodeURIComponent(item.artist || 'featured')}`,
+    album: item.channelName ? `${item.channelName}` : 'SoundWave Master',
     albumArt: item.maxresThumbnail || item.thumbnail || `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`,
     duration: item.durationSeconds || 240,
-    audioUrl: '', // Pure YouTube live streaming
+    audioUrl: '', // Pure live streaming
     genre,
     language: lang,
     youtubeId: item.id,
@@ -86,9 +86,9 @@ export function transformYouTubeVideo(item: any): Track {
     bpm: lang === 'Marathi' ? 128 : lang === 'Hindi' ? 98 : 110,
     key: 'C Major',
     plays: typeof item.views === 'string' ? 1500000 : item.views || 250000,
-    addedAt: 'Trending on YouTube',
+    addedAt: 'Trending',
     accentColor: lang === 'Marathi' ? '#E11D48' : lang === 'Hindi' ? '#F97316' : '#00F0FF',
-    source: 'YouTube Official Music',
+    source: 'SoundWave Official Master',
     sourceUrl: `https://www.youtube.com/watch?v=${item.id}`
   };
 }
@@ -160,21 +160,21 @@ export async function getYouTubeTrackFromIdOrUrl(input: string): Promise<Track |
 
   return {
     id: `yt-${videoId}`,
-    title: `YouTube Song (${videoId})`,
-    artist: 'YouTube Creator',
-    artistId: 'artist-youtube',
-    album: 'YouTube Stream',
+    title: `Track (${videoId})`,
+    artist: 'Artist',
+    artistId: 'artist-featured',
+    album: 'SoundWave Master',
     albumArt: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
     duration: 240,
     audioUrl: '',
-    genre: 'YouTube Music',
+    genre: 'SoundWave Hit',
     language: 'Hindi',
     youtubeId: videoId,
     youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
     plays: 500000,
     addedAt: 'Just now',
-    accentColor: '#FF0000',
-    source: 'YouTube Official Music',
+    accentColor: '#00F0FF',
+    source: 'SoundWave Official Master',
     sourceUrl: `https://www.youtube.com/watch?v=${videoId}`
   };
 }

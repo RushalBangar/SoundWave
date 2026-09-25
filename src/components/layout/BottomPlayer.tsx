@@ -160,20 +160,6 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
             >
               {currentTrack.artist}
             </p>
-            {currentTrack.youtubeId && onToggleYouTubeVideo && (
-              <button
-                onClick={onToggleYouTubeVideo}
-                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold transition shrink-0 ${
-                  isYouTubeVideoOpen
-                    ? 'bg-red-600 text-white shadow'
-                    : 'bg-red-950/80 text-red-400 border border-red-500/40 hover:bg-red-900'
-                }`}
-                title="Watch Official YouTube Video"
-              >
-                <Youtube className="w-2.5 h-2.5 fill-current" />
-                <span>Video</span>
-              </button>
-            )}
           </div>
         </div>
 
@@ -291,23 +277,8 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({
         </div>
       </div>
 
-      {/* RIGHT SECTION: YouTube, Instagram EQ, Lyrics, Queue, Connect, Volume */}
+      {/* RIGHT SECTION: Instagram EQ, Lyrics, Queue, Connect, Volume */}
       <div className="flex items-center justify-end gap-1.5 md:gap-2.5 w-1/4 min-w-[200px]">
-        {/* YouTube Official Video Mode */}
-        {onToggleYouTubeVideo && (
-          <button
-            onClick={onToggleYouTubeVideo}
-            className={`p-1.5 rounded-lg transition relative ${
-              isYouTubeVideoOpen
-                ? 'text-red-500 bg-red-950/60 border border-red-500/50 shadow-lg shadow-red-500/20'
-                : 'text-slate-400 hover:text-red-400 hover:bg-slate-800'
-            }`}
-            title="Watch Official YouTube Video"
-          >
-            <Youtube className="w-4.5 h-4.5 fill-current" />
-          </button>
-        )}
-
         {/* Instagram Reel Audio Equalizer */}
         {onOpenEqualizer && (
           <button

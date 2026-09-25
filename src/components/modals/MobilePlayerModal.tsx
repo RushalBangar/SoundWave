@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   ChevronDown, 
   Play, 
@@ -13,11 +13,9 @@ import {
   Laptop, 
   Sliders, 
   Sparkles, 
-  Youtube,
-  Volume2,
-  VolumeX,
-  Volume1,
-  Film
+  Volume2, 
+  VolumeX, 
+  Volume1 
 } from 'lucide-react';
 import { useMusic } from '../../context/MusicContext';
 import { useSync } from '../../context/SyncContext';
@@ -28,7 +26,6 @@ interface MobilePlayerModalProps {
   onOpenConnectModal: () => void;
   onOpenEqualizer?: () => void;
   onOpenInstagramTemplate?: () => void;
-  onToggleYouTubeVideo?: () => void;
 }
 
 export const MobilePlayerModal: React.FC<MobilePlayerModalProps> = ({
@@ -36,8 +33,7 @@ export const MobilePlayerModal: React.FC<MobilePlayerModalProps> = ({
   onClose,
   onOpenConnectModal,
   onOpenEqualizer,
-  onOpenInstagramTemplate,
-  onToggleYouTubeVideo
+  onOpenInstagramTemplate
 }) => {
   const {
     currentTrack,
@@ -62,13 +58,11 @@ export const MobilePlayerModal: React.FC<MobilePlayerModalProps> = ({
   } = useMusic();
 
   const { broadcastPlayPause, broadcastSeek } = useSync();
-  const [mobileDisplayMode, setMobileDisplayMode] = useState<'art' | 'video'>('art');
 
   if (!isOpen) return null;
 
   const liked = isLiked(currentTrack.id);
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
-  const hasYoutube = Boolean(currentTrack.youtubeId);
 
   const formatTime = (seconds: number) => {
     if (!seconds || isNaN(seconds)) return '0:00';
@@ -100,64 +94,26 @@ export const MobilePlayerModal: React.FC<MobilePlayerModalProps> = ({
           <ChevronDown className="w-7 h-7" />
         </button>
 
-        <div className="text-center min-w-0 px-2">
+        <div className="text-center min-w-0 px-2 flex-1">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block truncate">
             {currentTrack.source || 'Playing in SoundWave'}
           </span>
-          <span className="text-xs font-bold text-white truncate max-w-[200px] block">
+          <span className="text-xs font-bold text-white truncate max-w-[200px] block mx-auto">
             {currentTrack.album}
           </span>
         </div>
 
-        {/* Video / Art Toggle Pill */}
-        {hasYoutube ? (
-          <button
-            onClick={() => setMobileDisplayMode(prev => prev === 'art' ? 'video' : 'art')}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-bold flex items-center gap-1.5 transition border ${
-              mobileDisplayMode === 'video'
-                ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-600/30'
-                : 'bg-slate-800 text-red-400 border-red-500/40 hover:bg-slate-700'
-            }`}
-            title="Toggle between album art and official music video"
-          >
-            <Youtube className="w-3.5 h-3.5 fill-current" />
-            <span>{mobileDisplayMode === 'video' ? 'Cover' : 'Video'}</span>
-          </button>
-        ) : (
-          <div className="w-8" />
-        )}
+        <div className="w-8" />
       </div>
 
-      {/* Middle Display Area (Artwork OR Live YouTube Video) */}
+      {/* Middle Display Area (Album Artwork) */}
       <div className="my-auto py-3 flex flex-col items-center justify-center shrink-0">
         <div className="w-full max-w-[320px] aspect-square rounded-2xl overflow-hidden shadow-2xl shadow-cyan-950/70 border border-slate-800 relative bg-black">
-          {mobileDisplayMode === 'video' && currentTrack.youtubeId ? (
-            <iframe
-              key={currentTrack.youtubeId}
-              src={`https://www.youtube.com/embed/${currentTrack.youtubeId}?autoplay=1&enablejsapi=1&playsinline=1`}
-              title={currentTrack.title}
-              className="w-full h-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          ) : (
-            <>
-              <img
-                src={currentTrack.albumArt}
-                alt={currentTrack.title}
-                className="w-full h-full object-cover"
-              />
-              {hasYoutube && (
-                <button
-                  onClick={() => setMobileDisplayMode('video')}
-                  className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md text-white text-[11px] font-bold border border-red-500/50 flex items-center gap-1.5 shadow-lg active:scale-95"
-                >
-                  <Youtube className="w-3.5 h-3.5 text-red-500 fill-current" />
-                  <span>Watch Video</span>
-                </button>
-              )}
-            </>
-          )}
+          <img
+            src={currentTrack.albumArt}
+            alt={currentTrack.title}
+            className="w-full h-full object-cover"
+          />
         </div>
       </div>
 
@@ -282,20 +238,8 @@ export const MobilePlayerModal: React.FC<MobilePlayerModalProps> = ({
           </div>
         </div>
 
-        {/* Special Audio Tools: Instagram EQ, Template, Lyrics */}
+        {/* Audio Tools: Instagram EQ, Template, Lyrics */}
         <div className="flex items-center justify-around py-2 px-2 bg-slate-900/80 rounded-xl border border-slate-800/80 text-xs font-semibold">
-          {hasYoutube && (
-            <button
-              onClick={() => setMobileDisplayMode(prev => prev === 'art' ? 'video' : 'art')}
-              className={`flex items-center gap-1.5 p-1 transition ${
-                mobileDisplayMode === 'video' ? 'text-red-400 font-bold' : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <Youtube className="w-4 h-4 fill-current text-red-500" />
-              <span>{mobileDisplayMode === 'video' ? 'Hide Video' : 'Official Video'}</span>
-            </button>
-          )}
-
           {onOpenEqualizer && (
             <button
               onClick={() => {
