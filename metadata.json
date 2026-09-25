@@ -1,0 +1,7 @@
+{
+  "name": "SoundWave",
+  "description": "High-quality audio streaming and music discovery platform inspired by Spotify with custom cyan neon theme, cross-platform device sync, and mobile PWA for iOS and Android.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
